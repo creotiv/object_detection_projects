@@ -311,7 +311,8 @@ class CsvWriter(PipelineProcessor):
         if self.prev:
             _count = count - self.prev
 
-        time = self.start_time * 100 + int(100.0 / self.fps * frame_number)
+        time = ((self.start_time + int(frame_number / self.fps)) * 100 
+                + int(100.0 / self.fps) * (frame_number % self.fps))
         self.writer.writerow({'time': time, 'vehicles': _count})
         self.prev = count
 
