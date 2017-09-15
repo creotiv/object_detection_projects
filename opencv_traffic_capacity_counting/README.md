@@ -1,6 +1,6 @@
 # Road Traffic capacity counting example based on OpenCV
 
-### Video visualization demo
+### Visualization demo
 ![Example](intro.png)
 
 ### Report example
@@ -21,10 +21,7 @@ Edit **traffic_capacity.py** if needed:
 IMAGE_DIR = "./out"
 VIDEO_SOURCE = "input.mp4"
 SHAPE = (720, 1280)  # HxW
-AREA_PTS = np.array([
-    [[732, 720], [732, 590], [1280, 500], [1280, 720]],
-    [[0, 400], [645, 400], [645, 0], [0, 0]]
-])
+AREA_PTS = np.array([[780, 716], [686, 373], [883, 383], [1280, 636], [1280, 720]]) 
 
 ...
 
