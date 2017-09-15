@@ -1,9 +1,7 @@
-# Road Traffic counting example based on OpenCV
-
-**Speed:** 10.7 FPS (with visualization) 44.5 FPS (without visualization)
+# Road Traffic capacity counting example based on OpenCV
 
 ### Video visualization demo
-[![Video visualization demo](https://img.youtube.com/vi/_o5iLbRHKao/0.jpg)](https://youtu.be/_o5iLbRHKao)
+![Example](intro.png)
 
 ### Report example
 ![Report plot](report.png)

@@ -4,15 +4,11 @@ import csv
 
 import numpy as np
 import cv2
-
+import matplotlib.pyplot as plt
 import utils
 
 
-DIVIDER_COLOUR = (255, 255, 0)
-BOUNDING_BOX_COLOUR = (255, 0, 0)
-CENTROID_COLOUR = (0, 0, 255)
-CAR_COLOURS = [(0, 0, 255)]
-EXIT_COLOR = (66, 183, 42)
+AREA_COLOR = (66, 183, 42)
 
 
 class PipelineRunner(object):
@@ -97,7 +93,7 @@ class CapacityCounter(PipelineProcessor):
 
         if self.save_image:
             img = np.zeros(frame.shape, frame.dtype)
-            img[:, :] = EXIT_COLOR
+            img[:, :] = AREA_COLOR
             mask = cv2.bitwise_and(img, img, mask=self.area_mask)
             cv2.addWeighted(mask, 1, frame, 1, 0, frame)
             
@@ -129,7 +125,7 @@ class ContextCsvWriter(PipelineProcessor):
     def __init__(self, path, start_time=0, data=None, field_names=[], fps=30, faster=1, diff=False):
         super(ContextCsvWriter, self).__init__()
 
-        self.fp = open(os.path.join(path), 'a')
+        self.fp = open(os.path.join(path), 'w')
         self.writer = csv.DictWriter(
             self.fp, fieldnames=['time']+field_names)
         self.writer.writeheader()
@@ -161,8 +157,6 @@ class ContextCsvWriter(PipelineProcessor):
             _count['time'] = ((self.start_time + int(frame_number / self.fps)) * 100 + int(100.0 / self.fps) * (frame_number % self.fps))
         
         self.writer.writerow(_count)
-
-        self.log.debug("Frame #%d processed.", frame_number)
 
         return context
 

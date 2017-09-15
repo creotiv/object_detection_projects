@@ -14,7 +14,7 @@ cv2.ocl.setUseOpenCL(False)
 
 # ============================================================================
 
-IMAGE_DIR = "../out"
+IMAGE_DIR = "./out"
 VIDEO_SOURCE = '../opencv_traffic_counting/input.mp4'
 SHAPE = (720, 1280)
 AREA_PTS = np.array([[780, 716], [686, 373], [883, 383], [1280, 636], [1280, 720]]) 
