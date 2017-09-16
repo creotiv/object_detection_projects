@@ -8,7 +8,7 @@ if len(sys.argv) >= 3:
     d['5 seconds'] = (d['time']/int(sys.argv[2])).astype(int)
     d['capacity'] = (d['capacity']*100).astype(int)
     d = d.groupby('5 seconds').agg({'capacity':np.mean,"time":lambda x: x.iloc[0]})
-    d['time'] = (d['time']/100).astype(int)
+    d['time'] = (d['time']).astype(int)
     d['time'] = pd.to_datetime(d['time'],unit='s')
     d = d.set_index(['time'], drop=True)
     d.plot()
