@@ -78,12 +78,17 @@ class CapacityCounter(PipelineProcessor):
         self.image_dir = image_dir
         self.save_image = save_image
         
-    def sobel(self, frame, frame_number):
+    def calculate_capacity(self, frame, frame_number):
+        base_frame = frame
+        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        # this used for noise reduction at night time
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        cl1 = clahe.apply(frame)
+    
         edges = cv2.Canny(frame,50,70)
         edges = ~edges
-
         blur = cv2.bilateralFilter(cv2.blur(edges,(21,21), 100),9,200,200)
-        
         _, threshold = cv2.threshold(blur,230, 255,cv2.THRESH_BINARY)
         
         t = cv2.bitwise_and(threshold,threshold,mask = self.area_mask)
@@ -92,14 +97,14 @@ class CapacityCounter(PipelineProcessor):
         capacity = 1 - float(free)/self.all
 
         if self.save_image:
-            img = np.zeros(frame.shape, frame.dtype)
-            img[:, :] = AREA_COLOR
+            img = np.zeros(base_frame.shape, base_frame.dtype)
+            img[:, :] = EXIT_COLOR
             mask = cv2.bitwise_and(img, img, mask=self.area_mask)
-            cv2.addWeighted(mask, 1, frame, 1, 0, frame)
+            cv2.addWeighted(mask, 1, base_frame, 1, 0, base_frame)
             
             fig = plt.figure()
             fig.suptitle("Capacity: {}%".format(capacity*100), fontsize=16)
-            plt.subplot(211),plt.imshow(frame),plt.title('Original')
+            plt.subplot(211),plt.imshow(base_frame),plt.title('Original')
             plt.xticks([]), plt.yticks([])
             plt.subplot(212),plt.imshow(t),plt.title('Capacity map')
             plt.xticks([]), plt.yticks([])
@@ -112,7 +117,7 @@ class CapacityCounter(PipelineProcessor):
         frame = context['frame'].copy()
         frame_number = context['frame_number']
         
-        capacity = self.sobel(frame, frame_number)
+        capacity = self.calculate_capacity(frame, frame_number)
         
         self.log.debug("Capacity: {}%".format(capacity*100))
         context['capacity'] = capacity
