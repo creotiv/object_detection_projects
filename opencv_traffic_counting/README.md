@@ -1,5 +1,7 @@
 # Traffic counting example based on OpencCV object detection with background subtraction
 
+You can read article for this code [here](https://hackernoon.com/tutorial-making-road-traffic-counting-app-based-on-computer-vision-and-opencv-166937911660)
+
 **Speed:** 10.7 FPS (with visualization) 44.5 FPS (without visualization)
 
 ### Video visualization demo
