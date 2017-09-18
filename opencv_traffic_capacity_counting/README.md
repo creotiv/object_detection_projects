@@ -1,5 +1,7 @@
 # Road Traffic capacity counting example based on OpenCV
 
+You can read article for this code [here](https://hackernoon.com/tutorial-counting-road-traffic-capacity-with-opencv-998580f1fbde)
+
 ### Visualization demo
 ![Example](intro.png)
 
