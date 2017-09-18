@@ -6,3 +6,12 @@ Here i will publish all my example projects that relate to object detection algo
 
 [**Traffic capacity counting**](https://github.com/creotiv/object_detection_projects/tree/master/opencv_traffic_capacity_counting) - Traffic capacity counting example based on OpencCV.
 
+## Support 
+
+If you like what im doing, you can send me money for pepsi(i dont drink alcohol).
+Here is my BTC account:
+
+<img src="bitcoin.png" width="400" height="400">
+
+**1661M7AMmMJbBZyTosYMWMHkU7fbuBdxvV**
+
