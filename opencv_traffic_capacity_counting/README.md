@@ -48,6 +48,8 @@ chmod a+x make_video.sh
 python plot.py [path to the csv report] [number of seconds to group by] 
 ```
 
+## Subscribe to our Machine Learning blog
+[Subscribe to Machine Learning World](https://medium.com/machine-learning-world)
 
 ## Support 
 
