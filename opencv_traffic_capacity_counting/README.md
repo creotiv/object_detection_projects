@@ -53,10 +53,6 @@ python plot.py [path to the csv report] [number of seconds to group by]
 
 ## Support 
 
-If you like what im doing, you can send me money for pepsi(i dont drink alcohol).
-Here is my BTC account:
-
-<img src="../bitcoin.png" width="400" height="400">
-
-**1661M7AMmMJbBZyTosYMWMHkU7fbuBdxvV**
+If you like what im doing, you can send me some money for pepsi(i dont drink alcohol).
+https://www.paypal.me/creotiv
 
