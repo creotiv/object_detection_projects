@@ -98,7 +98,7 @@ class CapacityCounter(PipelineProcessor):
 
         if self.save_image:
             img = np.zeros(base_frame.shape, base_frame.dtype)
-            img[:, :] = EXIT_COLOR
+            img[:, :] = AREA_COLOR
             mask = cv2.bitwise_and(img, img, mask=self.area_mask)
             cv2.addWeighted(mask, 1, base_frame, 1, 0, base_frame)
             
