@@ -14,4 +14,4 @@ if len(sys.argv) >= 3:
     d.plot()
     plt.show()
 else:
-    print "Usage: python plot.py [path to the csv report] [number of seconds to group by]"
+    print "Usage: python plot.py [path to the csv report] [number of seconds to aggregate by]"
