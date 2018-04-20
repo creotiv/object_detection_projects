@@ -5,12 +5,12 @@
 
 ## How to run script
 ```
-pip install -r ../requirements.txt
+pip3 install -r ../requirements.txt
 ```
 
 Run script:
 ```
-python app.py
+python3 app.py
 ```
 
 ## Subscribe to our Machine Learning blog
