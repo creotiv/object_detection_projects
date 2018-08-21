@@ -17,3 +17,11 @@ Here i will publish all my example projects that relate to object detection algo
 If you like what im doing, you can send me some money for pepsi(i dont drink alcohol).
 https://www.paypal.me/creotiv
 
+## Thanks to people for supporting my work
+Esa Loukkola
+Praveen Baratam
+Clayd Anthoni
+Jeff Austin
+Artur Rodrigues
+Paul Lewis
+Arakdiy Kolesnikov
