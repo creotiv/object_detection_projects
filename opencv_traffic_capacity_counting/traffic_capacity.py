@@ -44,22 +44,25 @@ def main():
 
     frame_number = -1
     st = time.time()
-    for frame in cap:
-        if not frame.any():
-            log.error("Frame capture failed, skipping...")
+    
+    try:
+        for frame in cap:
+            if not frame.any():
+                log.error("Frame capture failed, skipping...")
 
-        frame_number += 1
+            frame_number += 1
 
-        pipeline.set_context({
-            'frame': frame,
-            'frame_number': frame_number,
-        })
-        context = pipeline.run()
+            pipeline.set_context({
+                'frame': frame,
+                'frame_number': frame_number,
+            })
+            context = pipeline.run()
 
-        # skipping 10 seconds
-        for i in xrange(240):
-            cap.next()
-
+            # skipping 10 seconds
+            for i in xrange(240):
+                cap.next()
+    except Exception as e:
+        log.exception(e)
 # ============================================================================
 
 if __name__ == "__main__":
