@@ -1,6 +1,8 @@
 # Simple demo of using PyQt, OpenCV and Haar Cascades for face detection in real-time
 
-### Report example
+Sex and age model was clonned from this repo: https://github.com/yu4u/age-gender-estimation
+
+### Example
 ![Example](me.png)
 
 ## How to run script
