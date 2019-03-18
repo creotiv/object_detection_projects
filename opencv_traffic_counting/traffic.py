@@ -25,10 +25,9 @@ from pipeline import (
 IMAGE_DIR = "./out"
 VIDEO_SOURCE = "input.mp4"
 SHAPE = (720, 1280)  # HxW
-EXIT_PTS = np.array([
-    [[732, 720], [732, 590], [1280, 500], [1280, 720]],
-    [[0, 400], [645, 400], [645, 0], [0, 0]]
-])
+EXIT_PTS_LEFT = np.array([[[0, 0], [645, 0], [645, 400], [0, 400]]])
+
+EXIT_PTS_RIGHT = np.array([[[732, 590], [1280, 500], [1280, 720], [732, 720]]])
 # ============================================================================
 
 
@@ -49,8 +48,11 @@ def main():
     log = logging.getLogger("main")
 
     # creating exit mask from points, where we will be counting our vehicles
-    base = np.zeros(SHAPE + (3,), dtype='uint8')
-    exit_mask = cv2.fillPoly(base, EXIT_PTS, (255, 255, 255))[:, :, 0]
+    base_for_left_mask = np.zeros(SHAPE + (3,), dtype='uint8')
+    base_for_right_mask = np.zeros(SHAPE + (3,), dtype='uint8')
+
+    exit_mask_right = cv2.fillPoly(base_for_right_mask, EXIT_PTS_RIGHT, (255,255,255))[:, :, 0] # take a single channel from a BGR image
+    exit_mask_left = cv2.fillPoly(base_for_left_mask, EXIT_PTS_LEFT, (255,255,255))[:, :, 0]
 
     # there is also bgslibrary, that seems to give better BG substruction, but
     # not tested it yet
@@ -63,7 +65,7 @@ def main():
                          save_image=True, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
-        VehicleCounter(exit_masks=[exit_mask], y_weight=2.0),
+        VehicleCounter(exit_masks=[exit_mask_left, exit_mask_right], y_weight=2.0),
         Visualizer(image_dir=IMAGE_DIR),
         CsvWriter(path='./', name='report.csv')
     ], log_level=logging.DEBUG)
@@ -111,5 +113,4 @@ if __name__ == "__main__":
     if not os.path.exists(IMAGE_DIR):
         log.debug("Creating image directory `%s`...", IMAGE_DIR)
         os.makedirs(IMAGE_DIR)
-
     main()
