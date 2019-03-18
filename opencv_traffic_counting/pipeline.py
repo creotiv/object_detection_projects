@@ -19,7 +19,7 @@ class PipelineRunner(object):
     '''
         Very simple pipline.
 
-        Just run passed processors in order with passing context from one to 
+        Just run passed processors in order with passing context from one to
         another.
 
         You can also set log level for processors.
@@ -78,13 +78,13 @@ class ContourDetection(PipelineProcessor):
 
         Purpose of this processor is to subtrac background, get moving objects
         and detect them with a cv2.findContours method, and then filter off-by
-        width and height. 
+        width and height.
 
         bg_subtractor - background subtractor isinstance.
         min_contour_width - min bounding rectangle width.
         min_contour_height - min bounding rectangle height.
         save_image - if True will save detected objects mask to file.
-        image_dir - where to save images(must exist).        
+        image_dir - where to save images(must exist).
     '''
 
     def __init__(self, bg_subtractor, min_contour_width=35, min_contour_height=35, save_image=False, image_dir='images'):
@@ -100,7 +100,7 @@ class ContourDetection(PipelineProcessor):
         '''
             This filters are hand-picked just based on visual tests
         '''
-
+        # https://docs.opencv.org/trunk/d9/d61/tutorial_py_morphological_ops.html
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
 
         # Fill any small holes
@@ -114,7 +114,7 @@ class ContourDetection(PipelineProcessor):
         return dilation
 
     def detect_vehicles(self, fg_mask, context):
-
+        # https://docs.opencv.org/3.4.2/d4/d73/tutorial_py_contours_begin.html
         matches = []
 
         # finding external contours
@@ -133,7 +133,7 @@ class ContourDetection(PipelineProcessor):
 
             matches.append(((x, y, w, h), centroid))
 
-        return matches
+        return matches # Meta deta for all detected contours in the foreground using the background subraction method
 
     def __call__(self, context):
         frame = context['frame'].copy()
@@ -159,7 +159,7 @@ class VehicleCounter(PipelineProcessor):
         Counting vehicles that entered in exit zone.
 
         Purpose of this class based on detected object and local cache create
-        objects pathes and count that entered in exit zone defined by exit masks.
+        objects paths and count that entered in exit zone defined by exit masks.
 
         exit_masks - list of the exit masks.
         path_size - max number of points in a path.
@@ -170,45 +170,49 @@ class VehicleCounter(PipelineProcessor):
         super(VehicleCounter, self).__init__()
 
         self.exit_masks = exit_masks
-
-        self.vehicle_count = 0
+        self.vehicle_count_left = 0
+        self.vehicle_count_right = 0
         self.path_size = path_size
-        self.pathes = []
+        self.paths = []
         self.max_dst = max_dst
         self.x_weight = x_weight
         self.y_weight = y_weight
 
-    def check_exit(self, point):
-        for exit_mask in self.exit_masks:
-            try:
-                if exit_mask[point[1]][point[0]] == 255:
-                    return True
-            except:
-                return True
+    def check_exit_left(self, point):
+        exit_mask = self.exit_masks[0]
+        if exit_mask[point[1]][point[0]] == 255:
+            return True
+        return False
+
+    def check_exit_right(self, point):
+        exit_mask = self.exit_masks[1]
+        if exit_mask[point[1]][point[0]] == 255:
+            return True
         return False
 
     def __call__(self, context):
         objects = context['objects']
         context['exit_masks'] = self.exit_masks
-        context['pathes'] = self.pathes
-        context['vehicle_count'] = self.vehicle_count
+        context['paths'] = self.paths
+        context['vehicle_count_left'] = self.vehicle_count_left
+        context['vehicle_count_right'] = self.vehicle_count_right
         if not objects:
             return context
 
         points = np.array(objects)[:, 0:2]
         points = points.tolist()
 
-        # add new points if pathes is empty
-        if not self.pathes:
+        # add new points if paths is empty
+        if not self.paths:
             for match in points:
-                self.pathes.append([match])
+                self.paths.append([match])
 
         else:
-            # link new points with old pathes based on minimum distance between
+            # link new points with old paths based on minimum distance between
             # points
-            new_pathes = []
+            new_paths = []
 
-            for path in self.pathes:
+            for path in self.paths:
                 _min = 999999
                 _match = None
                 for p in points:
@@ -233,59 +237,73 @@ class VehicleCounter(PipelineProcessor):
                 if _match and _min <= self.max_dst:
                     points.remove(_match)
                     path.append(_match)
-                    new_pathes.append(path)
+                    new_paths.append(path)
 
                 # do not drop path if current frame has no matches
                 if _match is None:
-                    new_pathes.append(path)
+                    new_paths.append(path)
 
-            self.pathes = new_pathes
+            self.paths = new_paths # here we have all the paths
 
-            # add new pathes
+            # add new paths
             if len(points):
                 for p in points:
                     # do not add points that already should be counted
-                    if self.check_exit(p[1]):
+                    if (self.check_exit_left(p[1]) or self.check_exit_right(p[1])):
                         continue
-                    self.pathes.append([p])
+                    self.paths.append([p]) # here we all all the new contours a.k.a points that do not belong to any path as a potential new path
 
         # save only last N points in path
-        for i, _ in enumerate(self.pathes):
-            self.pathes[i] = self.pathes[i][self.path_size * -1:]
+        for i, _ in enumerate(self.paths):
+            self.paths[i] = self.paths[i][self.path_size * -1:]
 
-        # count vehicles and drop counted pathes:
-        new_pathes = []
-        for i, path in enumerate(self.pathes):
+        # count vehicles and drop counted paths:
+        new_paths = []
+        for i, path in enumerate(self.paths):
             d = path[-2:]
-
+            # A vehicle in a given frame can only be in one of the three options:
+            # 1) Inside the right mask, 2) Inside the left mask, 3) Outside both masks
             if (
                 # need at list two points to count
                 len(d) >= 2 and
                 # prev point not in exit zone
-                not self.check_exit(d[0][1]) and
+                not self.check_exit_left(d[0][1]) and
                 # current point in exit zone
-                self.check_exit(d[1][1]) and
+                self.check_exit_left(d[1][1]) and
                 # path len is bigger then min
                 self.path_size <= len(path)
             ):
-                self.vehicle_count += 1
+                self.vehicle_count_left += 1
+
+            elif (
+                # need at list two points to count
+                len(d) >= 2 and
+                # prev point not in exit zone
+                not self.check_exit_right(d[0][1]) and
+                # current point in exit zone
+                self.check_exit_right(d[1][1]) and
+                # path len is bigger then min
+                self.path_size <= len(path)
+                ):
+                self.vehicle_count_right += 1
+
             else:
                 # prevent linking with path that already in exit zone
                 add = True
                 for p in path:
-                    if self.check_exit(p[1]):
+                    if (self.check_exit_right(p[1]) or self.check_exit_left(p[1])):
                         add = False
                         break
                 if add:
-                    new_pathes.append(path)
+                    new_paths.append(path)
 
-        self.pathes = new_pathes
+        self.paths = new_paths
 
-        context['pathes'] = self.pathes
+        context['paths'] = self.paths
         context['objects'] = objects
-        context['vehicle_count'] = self.vehicle_count
-
-        self.log.debug('#VEHICLES FOUND: %s' % self.vehicle_count)
+        context['vehicle_count_left'] = self.vehicle_count_left
+        context['vehicle_count_right'] = self.vehicle_count_right
+        self.log.debug('# Total Vehicles Found: %s' % (self.vehicle_count_right + self.vehicle_count_left))
 
         return context
 
@@ -306,12 +324,12 @@ class CsvWriter(PipelineProcessor):
 
     def __call__(self, context):
         frame_number = context['frame_number']
-        count = _count = context['vehicle_count']
+        count = _count = context['vehicle_count_right']
 
         if self.prev:
             _count = count - self.prev
 
-        time = ((self.start_time + int(frame_number / self.fps)) * 100 
+        time = ((self.start_time + int(frame_number / self.fps)) * 100
                 + int(100.0 / self.fps) * (frame_number % self.fps))
         self.writer.writerow({'time': time, 'vehicles': _count})
         self.prev = count
@@ -333,11 +351,11 @@ class Visualizer(PipelineProcessor):
                 return True
         return False
 
-    def draw_pathes(self, img, pathes):
+    def draw_paths(self, img, paths):
         if not img.any():
             return
 
-        for i, path in enumerate(pathes):
+        for i, path in enumerate(paths):
             path = np.array(path)[:, 1].tolist()
             for point in path:
                 cv2.circle(img, point, 2, CAR_COLOURS[0], -1)
@@ -345,8 +363,8 @@ class Visualizer(PipelineProcessor):
 
         return img
 
-    def draw_boxes(self, img, pathes, exit_masks=[]):
-        for (i, match) in enumerate(pathes):
+    def draw_boxes(self, img, paths, exit_masks=[]):
+        for (i, match) in enumerate(paths):
 
             contour, centroid = match[-1][:2]
             if self.check_exit(centroid, exit_masks):
@@ -360,7 +378,7 @@ class Visualizer(PipelineProcessor):
 
         return img
 
-    def draw_ui(self, img, vehicle_count, exit_masks=[]):
+    def draw_ui(self, img, vehicle_count=[], exit_masks=[]):
 
         # this just add green mask with opacity to the image
         for exit_mask in exit_masks:
@@ -371,20 +389,24 @@ class Visualizer(PipelineProcessor):
 
         # drawing top block with counts
         cv2.rectangle(img, (0, 0), (img.shape[1], 50), (0, 0, 0), cv2.FILLED)
-        cv2.putText(img, ("Vehicles passed: {total} ".format(total=vehicle_count)), (30, 30),
+        cv2.putText(img, ("Vehicles passed left: {total} ".format(total=vehicle_count[1])), (30, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
+        cv2.putText(img, ("Vehicles passed right: {total} ".format(total=vehicle_count[0])), (700, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
         return img
 
     def __call__(self, context):
         frame = context['frame'].copy()
         frame_number = context['frame_number']
-        pathes = context['pathes']
+        paths = context['paths']
         exit_masks = context['exit_masks']
-        vehicle_count = context['vehicle_count']
+        vehicle_count_right = context['vehicle_count_right']
+        vehicle_count_left = context['vehicle_count_left']
 
+        vehicle_count=[vehicle_count_right,vehicle_count_left]
         frame = self.draw_ui(frame, vehicle_count, exit_masks)
-        frame = self.draw_pathes(frame, pathes)
-        frame = self.draw_boxes(frame, pathes, exit_masks)
+        frame = self.draw_paths(frame, paths)
+        frame = self.draw_boxes(frame, paths, exit_masks)
 
         utils.save_frame(frame, self.image_dir +
                          "/processed_%04d.png" % frame_number)
