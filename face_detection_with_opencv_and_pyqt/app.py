@@ -3,18 +3,22 @@ from os import path
 
 import cv2
 import numpy as np
+from classifier import FaceClass
 
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
+import time
 
 
 class RecordVideo(QtCore.QObject):
-    image_data = QtCore.pyqtSignal(np.ndarray)
+    image_data = QtCore.pyqtSignal(tuple)
 
     def __init__(self, camera_port=0, parent=None):
         super().__init__(parent)
         self.camera = cv2.VideoCapture(camera_port)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
 
         self.timer = QtCore.QBasicTimer()
 
@@ -24,15 +28,17 @@ class RecordVideo(QtCore.QObject):
     def timerEvent(self, event):
         if (event.timerId() != self.timer.timerId()):
             return
-
+        
+        t = time.time()
         read, data = self.camera.read()
         if read:
-            self.image_data.emit(data)
+            self.image_data.emit((data, t))
 
 
 class FaceDetectionWidget(QtWidgets.QWidget):
-    def __init__(self, cascade_filepath_front, cascade_filepath_prof, parent=None):
+    def __init__(self, cascade_filepath_front, cascade_filepath_prof, fc, parent=None):
         super().__init__(parent)
+        self.fc = fc
         self.classifier_1 = cv2.CascadeClassifier(cascade_filepath_front)
         self.classifier_2 = cv2.CascadeClassifier(cascade_filepath_prof)
         self.image = QtGui.QImage()
@@ -42,6 +48,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
     def detect_faces(self, image: np.ndarray):
         # haarclassifiers work better in black and white
+        #image = cv2.resize(image,None, fx=1/2, fy=1/2, interpolation = cv2.INTER_AREA)
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         gray_image = cv2.equalizeHist(gray_image)
 
@@ -58,14 +65,23 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         
         return faces_prof if isinstance(faces_prof,np.ndarray) else faces_front
 
-    def image_data_slot(self, image_data):
+    def image_data_slot(self, data):
+        image_data, t = data
         faces = self.detect_faces(image_data)
-        for (x, y, w, h) in faces:
+        fc_gen, fc_age = self.fc.classify(image_data, faces)
+        fps = 1/(time.time() - t)
+        for i, (x, y, w, h) in enumerate(faces):
+            #x, y, w, h = int(x*2), int(y*2), int(w*2), int(h*2)
+            text = "Sex:%s Age:%s" % ('Male' if fc_gen[i] < 0.5 else 'Female', round(fc_age[i],1))
             cv2.rectangle(image_data,
                           (x, y),
                           (x+w, y+h),
                           self._red,
                           self._width)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(image_data,text,(x, y-5), font, 0.6,(255,255,255),1,cv2.LINE_AA)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(image_data,"FPS: {0:.2f}".format(fps),(5,20), font, 0.5,(255,255,255),1,cv2.LINE_AA)
 
         self.image = self.get_qimage(image_data)
         # rescale window to image size
@@ -98,7 +114,8 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 class MainWidget(QtWidgets.QWidget):
     def __init__(self, cascade_filepath_front, cascade_filepath_prof, parent=None):
         super().__init__(parent)
-        self.face_detection_widget = FaceDetectionWidget(cascade_filepath_front, cascade_filepath_prof)
+        self.fc = FaceClass()
+        self.face_detection_widget = FaceDetectionWidget(cascade_filepath_front, cascade_filepath_prof, self.fc)
 
         # TODO: set video port
         self.record_video = RecordVideo()

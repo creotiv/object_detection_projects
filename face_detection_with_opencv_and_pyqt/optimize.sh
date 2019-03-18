@@ -1,0 +1,1 @@
+tflite_convert --keras_model_file=weights.29-3.76_utk.hdf5 --inference_type=FLOAT --output_file=optimized8bits.tflite --std_dev_values=1 --mean_values=0 --default_ranges_min=0 --default_ranges_max=15 --output_arrays=dense_1/Softmax,dense_2/Softmax

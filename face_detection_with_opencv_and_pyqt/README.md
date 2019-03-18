@@ -8,6 +8,8 @@
 pip3 install -r ../requirements.txt
 ```
 
+Download weights from https://drive.google.com/open?id=17Fa1Vq5qJibJfdOHY3M6yK5YVZCDofJS
+
 Run script:
 ```
 python3 app.py
