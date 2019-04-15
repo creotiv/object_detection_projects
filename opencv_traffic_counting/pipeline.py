@@ -95,6 +95,7 @@ class ContourDetection(PipelineProcessor):
         self.min_contour_height = min_contour_height
         self.save_image = save_image
         self.image_dir = image_dir
+        self.major = cv2.__version__.split('.')[0]
 
     def filter_mask(self, img, a=None):
         '''
@@ -118,8 +119,12 @@ class ContourDetection(PipelineProcessor):
         matches = []
 
         # finding external contours
-        im2, contours, hierarchy = cv2.findContours(
-            fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
+        if self.major == '3':
+            _, contours, _ = cv2.findContours(
+                fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
+        else:
+            contours, _ = cv2.findContours(
+                fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
 
         for (i, contour) in enumerate(contours):
             (x, y, w, h) = cv2.boundingRect(contour)
@@ -390,3 +395,4 @@ class Visualizer(PipelineProcessor):
                          "/processed_%04d.png" % frame_number)
 
         return context
+
