@@ -66,6 +66,5 @@ python plot.py [path to the csv report] [number of seconds to group by]
 
 ## Support 
 
-If you like what im doing, you can send me some money for pepsi(i dont drink alcohol).
-https://www.paypal.me/creotiv
+Beside work im trying to help homeless animals, so if you like my work, you can support me https://www.patreon.com/uah
 
